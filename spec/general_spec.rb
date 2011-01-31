@@ -13,7 +13,16 @@ describe 'general' do
 
   it 'decode mp3 & encode pcm wav' do
     input  = @rs.open_read  'file.mp3'
-    output = @rs.open_write 'file.wav', input.signal
+
+    sig = input.signal
+    sig.bits.should == 16
+    sig.channels.should == 2
+    sig.channels = 1
+
+    enc = input.encoding
+    #enc.bps.should == 320
+
+    output = @rs.open_write 'file.out.mp3', input.signal, input.encoding
 
     buf = RSoxBuffer.new 4096
     buf.length.should == 4096

@@ -111,18 +111,58 @@ VALUE rsoxformat_signal(VALUE self) {/*{{{*/
     return Data_Wrap_Struct(RSoxSignal, 0, 0, &c_format->signal);
 }/*}}}*/
 
-VALUE rsoxformat_rate(VALUE self) {/*{{{*/
-    sox_format_t     *c_format;
+VALUE rsoxsignal_rate(VALUE self) {/*{{{*/
+    sox_signalinfo_t *c;
 
-    Data_Get_Struct(self, sox_format_t, c_format);
-    return DBL2NUM(c_format->signal.rate);
+    Data_Get_Struct(self, sox_signalinfo_t, c);
+
+    return DBL2NUM(c->rate);
 }/*}}}*/
 
-VALUE rsoxformat_channels(VALUE self) {/*{{{*/
-    sox_format_t     *c_format;
+VALUE rsoxsignal_rate_set(VALUE self, VALUE rate) {/*{{{*/
+    sox_signalinfo_t *c;
+    double val = NUM2DBL(rate);
 
-    Data_Get_Struct(self, sox_format_t, c_format);
-    return UINT2NUM(c_format->signal.channels);
+    Data_Get_Struct(self, sox_signalinfo_t, c);
+    c->rate = val;
+
+    return rate;
+}/*}}}*/
+
+VALUE rsoxsignal_channels(VALUE self) {/*{{{*/
+    sox_signalinfo_t     *c_signal;
+
+    Data_Get_Struct(self, sox_signalinfo_t, c_signal);
+
+    return UINT2NUM(c_signal->channels);
+}/*}}}*/
+
+VALUE rsoxsignal_channels_set(VALUE self, VALUE channels) {/*{{{*/
+    sox_signalinfo_t     *c_signal;
+    unsigned int val = NUM2UINT(channels);
+
+    Data_Get_Struct(self, sox_signalinfo_t, c_signal);
+    c_signal->channels = val;
+
+    return channels;
+}/*}}}*/
+
+VALUE rsoxsignal_bits(VALUE self) {/*{{{*/
+    sox_signalinfo_t     *c_signal;
+
+    Data_Get_Struct(self, sox_signalinfo_t, c_signal);
+
+    return UINT2NUM(c_signal->precision);
+}/*}}}*/
+
+VALUE rsoxsignal_bits_set(VALUE self, VALUE bits) {/*{{{*/
+    sox_signalinfo_t     *c_signal;
+    unsigned int val = NUM2UINT(bits);
+
+    Data_Get_Struct(self, sox_signalinfo_t, c_signal);
+    c_signal->precision = val;
+
+    return bits;
 }/*}}}*/
 
 VALUE rsoxformat_encoding(VALUE self) {/*{{{*/
@@ -251,6 +291,24 @@ VALUE rsoxbuffer_buffer(VALUE self) {/*{{{*/
     return rb_iv_get(self, "@buffer");
 }/*}}}*/
 
+VALUE rsoxencoding_bps(VALUE self) {/*{{{*/
+  sox_encodinginfo_t *c_enc;
+
+  Data_Get_Struct(self, sox_encodinginfo_t, c_enc);
+
+  return UINT2NUM(c_enc->bits_per_sample);
+}/*}}}*/
+
+VALUE rsoxencoding_bps_set(VALUE self, VALUE bps) {/*{{{*/
+  sox_encodinginfo_t *c_enc;
+  unsigned int val = NUM2UINT(bps);
+
+  Data_Get_Struct(self, sox_encodinginfo_t, c_enc);
+  c_enc->bits_per_sample = val;
+
+  return bps;
+}/*}}}*/
+
 void Init_rsox(void) {/*{{{*/
     RSox = rb_define_class("RSox", rb_cObject);
     rb_define_singleton_method(RSox, "new",   rsox_new,   0);
@@ -267,8 +325,6 @@ void Init_rsox(void) {/*{{{*/
 
     RSoxFormat = rb_define_class("RSoxFormat", rb_cObject);
     rb_define_method(RSoxFormat, "signal",   rsoxformat_signal,   0);
-    rb_define_method(RSoxFormat, "rate",     rsoxformat_rate,     0);
-    rb_define_method(RSoxFormat, "channels", rsoxformat_channels, 0);
     rb_define_method(RSoxFormat, "encoding", rsoxformat_encoding, 0);
     rb_define_method(RSoxFormat, "filename", rsoxformat_filename, 0);
     rb_define_method(RSoxFormat, "read",     rsoxformat_read,     1);
@@ -277,14 +333,24 @@ void Init_rsox(void) {/*{{{*/
     rb_define_method(RSoxFormat, "seek",     rsoxformat_seek,     2);
 
     RSoxFormatHandler = rb_define_class("RSoxFormatHandler", rb_cObject);
-    RSoxSignal        = rb_define_class("RSoxSignal", rb_cObject);
     RSoxEffectsChain  = rb_define_class("RSoxEffectsChain", rb_cObject);
     RSoxEffect        = rb_define_class("RSoxEffect", rb_cObject);
     RSoxEffectHandler = rb_define_class("RSoxEffectHandler", rb_cObject);
-    RSoxEncoding      = rb_define_class("RSoxEncoding", rb_cObject);
 
     RSoxBuffer        = rb_define_class("RSoxBuffer", rb_cObject);
     rb_define_method(RSoxBuffer, "initialize", rsoxbuffer_initialize, -1);
     rb_define_method(RSoxBuffer, "length",     rsoxbuffer_length,      0);
     rb_define_method(RSoxBuffer, "buffer",     rsoxbuffer_buffer,      0);
+
+    RSoxSignal        = rb_define_class("RSoxSignal", rb_cObject);
+    rb_define_method(RSoxSignal, "rate",      rsoxsignal_rate,         0);
+    rb_define_method(RSoxSignal, "channels",  rsoxsignal_channels,     0);
+    rb_define_method(RSoxSignal, "bits",      rsoxsignal_bits,         0);
+    rb_define_method(RSoxSignal, "rate=",     rsoxsignal_rate_set,     1);
+    rb_define_method(RSoxSignal, "channels=", rsoxsignal_channels_set, 1);
+    rb_define_method(RSoxSignal, "bits=",     rsoxsignal_bits_set,     1);
+
+    RSoxEncoding      = rb_define_class("RSoxEncoding", rb_cObject);
+    rb_define_method(RSoxEncoding, "bps",  rsoxencoding_bps, 0);
+    rb_define_method(RSoxEncoding, "bps=", rsoxencoding_bps, 1);
 }/*}}}*/
