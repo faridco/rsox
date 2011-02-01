@@ -1,7 +1,7 @@
 require 'rsox'
 
 describe 'general' do
-  before :all do
+  before :each do
     @rs = RSox.new
   end
 
@@ -22,22 +22,23 @@ describe 'general' do
     enc = input.encoding
     #enc.bps.should == 320
 
-    output = @rs.open_write 'file.out.mp3', input.signal, input.encoding
+    output = @rs.open_write 'file.wav', input.signal
 
     buf = RSoxBuffer.new 4096
     buf.length.should == 4096
 
-    while (readed = input.read buf) > 0
+    if (readed = input.read buf) > 0
       wrote = output.write buf, readed
       readed.should == wrote
     end
 
-    input.close.should == 0
-    output.close.should == 0
+    #input.close.should == 0
+    #output.close.should == 0
   end
 
   it 'checks buffer' do
     buffer = RSoxBuffer.new
     buffer.length.should == 2048
   end
+
 end
