@@ -220,13 +220,16 @@ typedef struct {/*{{{ rsox_block_with_id_t */
 static int rsox_rubyblock_flow(sox_effect_t *effect, sox_sample_t const *ibuf, sox_sample_t *obuf UNUSED, size_t *isamp, size_t *osamp) {/*{{{*/
   size_t i;
   rsox_block_with_id_t *param = (rsox_block_with_id_t *)effect->priv;
-  VALUE yield_ary = rb_ary_new();
+  //VALUE yield_ary = rb_ary_new();
 
-  for (i = 0; i < *isamp; i++)
-    rb_ary_push(yield_ary, INT2NUM(ibuf[i]));
+  //for (i = 0; i < *isamp; i++)
+    //rb_ary_push(yield_ary, INT2NUM(ibuf[i]));
+
+  VALUE buffer = Data_Wrap_Struct(RSoxBuffer, 0, 0, ibuf);
+  rb_iv_set(buffer, "@length", INT2NUM(*isamp));
 
   if (*isamp > 0)
-    rb_funcall(param->block, param->func, 1, yield_ary);
+    rb_funcall(param->block, param->func, 1, buffer);
 
   *osamp = 0;
 
@@ -309,6 +312,17 @@ VALUE rsoxbuffer_initialize(int argc, VALUE *argv, VALUE self) {/*{{{*/
 
   return self;
 }/*}}}*/
+
+VALUE rsoxbuffer_at(VALUE self, VALUE index) {
+  sox_sample_t *c_buffer;
+
+  if (index < rb_iv_get(self, "@length")) {
+    Data_Get_Struct(self, sox_sample_t, c_buffer);
+    return INT2NUM(c_buffer[NUM2INT(index)]);
+  }
+
+  return Qnil;
+}
 
 VALUE rsoxbuffer_length(VALUE self) {/*{{{*/
   return rb_iv_get(self, "@length");
@@ -395,7 +409,10 @@ void Init_rsox(void) {/*{{{*/
   RSoxBuffer        = rb_define_class("RSoxBuffer", rb_cObject);
   rb_define_method(RSoxBuffer, "initialize", rsoxbuffer_initialize, -1);
   rb_define_method(RSoxBuffer, "length",     rsoxbuffer_length,      0);
+  rb_define_method(RSoxBuffer, "size",       rsoxbuffer_length,      0);
   rb_define_method(RSoxBuffer, "buffer",     rsoxbuffer_buffer,      0);
+  rb_define_method(RSoxBuffer, "[]",         rsoxbuffer_at,          1);
+  rb_define_method(RSoxBuffer, "at",         rsoxbuffer_at,          1);
 
   RSoxSignal        = rb_define_class("RSoxSignal", rb_cObject);
   rb_define_method(RSoxSignal, "rate",      rsoxsignal_rate,         0);

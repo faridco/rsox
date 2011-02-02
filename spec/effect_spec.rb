@@ -6,7 +6,7 @@ describe 'effect' do
   end
 
   it 'example0.c' do
-    input  = @rs.open_read 'file.mp3'
+    input  = @rs.open_read 'file2.mp3'
     input.signal.channels.should == 2
 
     output = @rs.open_write 'file.out.wav', input.signal
@@ -41,8 +41,11 @@ describe 'effect' do
     chain.add 'input', input
     chain.add 'reverb'
     chain.add 'block' do |ary|
+      $stderr.puts "#{ary.inspect}: #{ary.length} #{ary.at(0)} #{ary[0]}"
+      #puts ary.at(0)
+      #puts ary.size
       #$stderr.puts "ruby: block call |#{ary.inspect}|"
-      File.open('file2.out.mp3.2', 'wb') {|f| f.write ary.pack('l*') }
+      #File.open('file2.out.mp3.2', 'wb') {|f| f.write ary.pack('l*') }
     end
 
     chain.flow.should == SOX_SUCCESS
