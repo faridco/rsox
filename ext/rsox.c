@@ -47,6 +47,16 @@ VALUE rsox_initialize(VALUE self) {/*{{{*/
   return self;
 }/*}}}*/
 
+VALUE rsox_set_bufsize(VALUE self, VALUE bufsize) {
+  sox_globals.bufsiz = FIX2INT(bufsize);
+
+  return Qtrue;
+}
+
+VALUE rsox_get_bufsize(VALUE self) {
+  return INT2FIX(sox_globals.bufsiz);
+}
+
 VALUE rsox_format_init(VALUE self) {/*{{{*/
   int i = sox_format_init();
   return INT2NUM(i);
@@ -220,11 +230,6 @@ typedef struct {/*{{{ rsox_block_with_id_t */
 static int rsox_rubyblock_flow(sox_effect_t *effect, sox_sample_t const *ibuf, sox_sample_t *obuf UNUSED, size_t *isamp, size_t *osamp) {/*{{{*/
   size_t i;
   rsox_block_with_id_t *param = (rsox_block_with_id_t *)effect->priv;
-  //VALUE yield_ary = rb_ary_new();
-
-  //for (i = 0; i < *isamp; i++)
-    //rb_ary_push(yield_ary, INT2NUM(ibuf[i]));
-
   VALUE buffer = Data_Wrap_Struct(RSoxBuffer, 0, 0, ibuf);
   rb_iv_set(buffer, "@length", INT2NUM(*isamp));
 
@@ -391,12 +396,14 @@ void Init_rsox(void) {/*{{{*/
   RSox = rb_define_class("RSox", rb_cObject);
   rb_define_singleton_method(RSox, "new",   rsox_new,   0);
   rb_define_singleton_method(RSox, "count", rsox_count, 0);
-  rb_define_method(RSox, "initialize",  rsox_initialize,   0);
-  rb_define_method(RSox, "format_init", rsox_format_init,  0);
-  rb_define_method(RSox, "format_quit", rsox_format_quit,  0);
-  rb_define_method(RSox, "open_read",   rsox_open_read,   -1);
-  rb_define_method(RSox, "open_write",  rsox_open_write,  -1);
-  rb_define_method(RSox, "chain",       rsox_effectschain, 2);
+  rb_define_method(RSox, "initialize",   rsox_initialize,   0);
+  rb_define_method(RSox, "format_init",  rsox_format_init,  0);
+  rb_define_method(RSox, "format_quit",  rsox_format_quit,  0);
+  rb_define_method(RSox, "open_read",    rsox_open_read,   -1);
+  rb_define_method(RSox, "open_write",   rsox_open_write,  -1);
+  rb_define_method(RSox, "chain",        rsox_effectschain, 2);
+  rb_define_method(RSox, "buffer_size",  rsox_get_bufsize,  0);
+  rb_define_method(RSox, "buffer_size=", rsox_set_bufsize,  1);
 
   RSoxFormat = rb_define_class("RSoxFormat", rb_cObject);
   rb_define_method(RSoxFormat, "signal",   rsoxformat_signal,   0);
