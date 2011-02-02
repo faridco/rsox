@@ -32,4 +32,19 @@ describe 'effect' do
 
     chain.flow.should == SOX_SUCCESS
   end
+
+  it 'block output' do
+    input  = @rs.open_read 'file2.mp3'
+    output = @rs.open_write 'file2.out.mp3', input.signal
+
+    chain = @rs.chain input, output
+    chain.add 'input', input
+    chain.add 'reverb'
+    chain.add 'block' do |ary|
+      #$stderr.puts "ruby: block call |#{ary.inspect}|"
+      File.open('file2.out.mp3.2', 'wb') {|f| f.write ary.pack('l*') }
+    end
+
+    chain.flow.should == SOX_SUCCESS
+  end
 end

@@ -1,6 +1,5 @@
 #include <ruby.h>
 #include <sox.h>
-#include <stdio.h>
 
 static VALUE RSox;
 
@@ -213,35 +212,79 @@ VALUE rsoxformat_seek(VALUE self, VALUE offset, VALUE whence){/*{{{*/
   return INT2NUM(sox_seek(c_format, NUM2LONG(offset), NUM2INT(whence)));
 }/*}}}*/
 
+typedef struct {/*{{{ rsox_block_with_id_t */
+  VALUE block;
+  ID func;
+} rsox_block_with_id_t;/*}}}*/
+
+static int rsox_rubyblock_flow(sox_effect_t *effect, sox_sample_t const *ibuf, sox_sample_t *obuf UNUSED, size_t *isamp, size_t *osamp) {/*{{{*/
+  size_t i;
+  rsox_block_with_id_t *param = (rsox_block_with_id_t *)effect->priv;
+  VALUE yield_ary = rb_ary_new();
+
+  for (i = 0; i < *isamp; i++)
+    rb_ary_push(yield_ary, INT2NUM(ibuf[i]));
+
+  if (*isamp > 0)
+    rb_funcall(param->block, param->func, 1, yield_ary);
+
+  *osamp = 0;
+
+  return SOX_SUCCESS;
+}/*}}}*/
+
+static sox_effect_handler_t const *rsox_rubyblock_handler(void) {/*{{{*/
+  static sox_effect_handler_t handler = {
+    "block", NULL, SOX_EFF_MCHAN, NULL, NULL, rsox_rubyblock_flow, NULL, NULL, NULL, sizeof(rsox_block_with_id_t)
+  };
+
+  return &handler;
+}/*}}}*/
+
 VALUE rsoxeffectschain_add(int argc, VALUE *argv, VALUE self) {/*{{{*/
   sox_effects_chain_t *c_chain;
   sox_effect_t *c_effect;
   sox_format_t *c_input, *c_output, *c_tmp_format;
   VALUE name, options, tmp, input, output;
   sox_effect_handler_t const *c_handler;
-  char *c_options[10];
+  char *c_options[10], *c_name;
   int i, j, t;
+  rsox_block_with_id_t *block_param;
 
   rb_scan_args(argc, argv, "1*", &name, &options);
 
-  c_handler = sox_find_effect(StringValuePtr(name));
-  if (c_handler == NULL)
+  c_name = StringValuePtr(name);
+
+  if (strncmp(c_name, "block", 5) == 0) {
+    if (!rb_block_given_p())
+      rb_raise(rb_eArgError, "no block given");
+
+    c_handler = rsox_rubyblock_handler();
+    c_effect = sox_create_effect(c_handler);
+
+    block_param  = (rsox_block_with_id_t *)c_effect->priv;
+    block_param->block = rb_block_proc();
+    block_param->func  = rb_intern("call");
+  } else {
+    c_handler = sox_find_effect(StringValuePtr(name));
+    if (c_handler == NULL)
       rb_raise(rb_eArgError, "no such effect: %s", StringValuePtr(name));
-  c_effect = sox_create_effect(c_handler);
+    c_effect = sox_create_effect(c_handler);
 
-  for (i = j = 0; i < RARRAY_LEN(options); i++) {
-    if (TYPE(RARRAY_PTR(options)[i]) == T_DATA) {
-      Data_Get_Struct(RARRAY_PTR(options)[i], sox_format_t, c_tmp_format);
-      c_options[j++] = (char *)c_tmp_format;
-    } else {
-      tmp = rb_check_string_type(RARRAY_PTR(options)[i]);
-      c_options[j++] = NIL_P(tmp) ? NULL : RSTRING_PTR(tmp);
+    for (i = j = 0; i < RARRAY_LEN(options); i++) {
+      if (TYPE(RARRAY_PTR(options)[i]) == T_DATA) {
+        Data_Get_Struct(RARRAY_PTR(options)[i], sox_format_t, c_tmp_format);
+        c_options[j++] = (char *)c_tmp_format;
+      } else {
+        tmp = rb_check_string_type(RARRAY_PTR(options)[i]);
+        c_options[j++] = NIL_P(tmp) ? NULL : RSTRING_PTR(tmp);
+      }
     }
-  }
 
-  i = sox_effect_options(c_effect, j, j > 0 ? c_options : NULL);
-  if (i != SOX_SUCCESS)
-    rb_raise(rb_eArgError, "wrong arguments (%d)", j);
+    i = sox_effect_options(c_effect, j, j > 0 ? c_options : NULL);
+    if (i != SOX_SUCCESS)
+      rb_raise(rb_eArgError, "wrong arguments (%d)", j);
+  }
 
   Data_Get_Struct(self, sox_effects_chain_t, c_chain);
   Data_Get_Struct(rb_iv_get(self, "@input"),  sox_format_t, c_input);
