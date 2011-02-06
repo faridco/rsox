@@ -2,6 +2,12 @@
 
 ---
 
+### Install
+
+	gem install rsox
+
+---
+
 ### Usage
 
 rewritten `example0.c` from [sox](http://sox.sourceforge.net/)
