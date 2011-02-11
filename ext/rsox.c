@@ -10,7 +10,7 @@ static VALUE RSoxSignal;
 static VALUE RSoxEncoding;
 static VALUE RSoxBuffer;
 
-static void rsox_destroy(void *instance) {/*{{{*/
+static void rsox_destroy(void *instance) {
   int *instance_count;
 
   instance_count = (int*)instance;
@@ -18,9 +18,9 @@ static void rsox_destroy(void *instance) {/*{{{*/
   if (*instance_count == 0)
     sox_quit();
   rb_iv_set(RSox, "@instance_count", INT2NUM(*instance_count));
-}/*}}}*/
+}
 
-VALUE rsox_new(VALUE class) {/*{{{*/
+VALUE rsox_new(VALUE class) {
   static int rsox_instance_count = 0;
   VALUE instance_num;
 
@@ -31,13 +31,13 @@ VALUE rsox_new(VALUE class) {/*{{{*/
   rb_obj_call_init(instance_num, 0, 0);
 
   return instance_num;
-}/*}}}*/
+}
 
-VALUE rsox_count(VALUE class) {/*{{{*/
+VALUE rsox_count(VALUE class) {
   return rb_iv_get(class, "@count");
-}/*}}}*/
+}
 
-VALUE rsox_initialize(VALUE self) {/*{{{*/
+VALUE rsox_initialize(VALUE self) {
   int *instance_count;
 
   Data_Get_Struct(self, int, instance_count);
@@ -45,7 +45,7 @@ VALUE rsox_initialize(VALUE self) {/*{{{*/
     sox_init();
 
   return self;
-}/*}}}*/
+}
 
 VALUE rsox_set_bufsize(VALUE self, VALUE bufsize) {
   sox_globals.bufsiz = FIX2INT(bufsize);
@@ -57,21 +57,21 @@ VALUE rsox_get_bufsize(VALUE self) {
   return INT2FIX(sox_globals.bufsiz);
 }
 
-VALUE rsox_format_init(VALUE self) {/*{{{*/
+VALUE rsox_format_init(VALUE self) {
   int i = sox_format_init();
   return INT2NUM(i);
-}/*}}}*/
+}
 
-VALUE rsox_format_quit(VALUE self) {/*{{{*/
+VALUE rsox_format_quit(VALUE self) {
   sox_format_quit();
   return Qnil;
-}/*}}}*/
+}
 
-static void rsox_format_close(void *ptr) {/*{{{*/
+static void rsox_format_close(void *ptr) {
   sox_close(ptr);
-}/*}}}*/
+}
 
-VALUE rsox_open_read(int argc, VALUE *argv, VALUE self) {/*{{{*/
+VALUE rsox_open_read(int argc, VALUE *argv, VALUE self) {
   VALUE path, signal, encoding, filetype;
   sox_signalinfo_t   *c_signal   = NULL;
   sox_encodinginfo_t *c_encoding = NULL;
@@ -85,13 +85,13 @@ VALUE rsox_open_read(int argc, VALUE *argv, VALUE self) {/*{{{*/
   c_format = sox_open_read(StringValuePtr(path), c_signal, c_encoding, filetype == Qnil ? NULL : StringValuePtr(filetype));
 
   return Data_Wrap_Struct(RSoxFormat, 0, rsox_format_close, c_format);
-}/*}}}*/
+}
 
-sox_bool rsox_overwrite_callback(const char *filename) {/*{{{*/
+sox_bool rsox_overwrite_callback(const char *filename) {
   return sox_false;
-}/*}}}*/
+}
 
-VALUE rsox_open_write(int argc, VALUE *argv, VALUE self) {/*{{{*/
+VALUE rsox_open_write(int argc, VALUE *argv, VALUE self) {
   VALUE path, signal, encoding, filetype, oob;
   sox_signalinfo_t   *c_signal   = NULL;
   sox_encodinginfo_t *c_encoding = NULL;
@@ -112,26 +112,32 @@ VALUE rsox_open_write(int argc, VALUE *argv, VALUE self) {/*{{{*/
     rb_block_given_p() ? rsox_overwrite_callback : NULL);
 
   return Data_Wrap_Struct(RSoxFormat, 0, 0, c_format);
-}/*}}}*/
+}
 
-VALUE rsoxformat_signal(VALUE self) {/*{{{*/
+VALUE rsoxformat_signal(VALUE self) {
   sox_format_t     *c_format;
   sox_signalinfo_t *c_info;
 
   Data_Get_Struct(self, sox_format_t, c_format);
 
   return Data_Wrap_Struct(RSoxSignal, 0, 0, &c_format->signal);
-}/*}}}*/
+}
 
-VALUE rsoxsignal_rate(VALUE self) {/*{{{*/
+VALUE rsoxsignal_alloc(VALUE klass) {
+	sox_signalinfo_t *c_signal = ALLOC(sox_signalinfo_t);
+	memset(c_signal, 0, sizeof(sox_signalinfo_t));
+	return Data_Wrap_Struct(klass, 0, free, c_signal);
+}
+
+VALUE rsoxsignal_rate(VALUE self) {
   sox_signalinfo_t *c;
 
   Data_Get_Struct(self, sox_signalinfo_t, c);
 
   return DBL2NUM(c->rate);
-}/*}}}*/
+}
 
-VALUE rsoxsignal_rate_set(VALUE self, VALUE rate) {/*{{{*/
+VALUE rsoxsignal_rate_set(VALUE self, VALUE rate) {
   sox_signalinfo_t *c;
   double val = NUM2DBL(rate);
 
@@ -139,17 +145,17 @@ VALUE rsoxsignal_rate_set(VALUE self, VALUE rate) {/*{{{*/
   c->rate = val;
 
   return rate;
-}/*}}}*/
+}
 
-VALUE rsoxsignal_channels(VALUE self) {/*{{{*/
+VALUE rsoxsignal_channels(VALUE self) {
   sox_signalinfo_t     *c_signal;
 
   Data_Get_Struct(self, sox_signalinfo_t, c_signal);
 
   return UINT2NUM(c_signal->channels);
-}/*}}}*/
+}
 
-VALUE rsoxsignal_channels_set(VALUE self, VALUE channels) {/*{{{*/
+VALUE rsoxsignal_channels_set(VALUE self, VALUE channels) {
   sox_signalinfo_t     *c_signal;
   unsigned int val = NUM2UINT(channels);
 
@@ -157,17 +163,17 @@ VALUE rsoxsignal_channels_set(VALUE self, VALUE channels) {/*{{{*/
   c_signal->channels = val;
 
   return channels;
-}/*}}}*/
+}
 
-VALUE rsoxsignal_bits(VALUE self) {/*{{{*/
+VALUE rsoxsignal_bits(VALUE self) {
   sox_signalinfo_t     *c_signal;
 
   Data_Get_Struct(self, sox_signalinfo_t, c_signal);
 
   return UINT2NUM(c_signal->precision);
-}/*}}}*/
+}
 
-VALUE rsoxsignal_bits_set(VALUE self, VALUE bits) {/*{{{*/
+VALUE rsoxsignal_bits_set(VALUE self, VALUE bits) {
   sox_signalinfo_t     *c_signal;
   unsigned int val = NUM2UINT(bits);
 
@@ -175,25 +181,43 @@ VALUE rsoxsignal_bits_set(VALUE self, VALUE bits) {/*{{{*/
   c_signal->precision = val;
 
   return bits;
-}/*}}}*/
+}
 
-VALUE rsoxformat_encoding(VALUE self) {/*{{{*/
+VALUE rsoxsignal_length(VALUE self, VALUE bits) {
+  sox_signalinfo_t     *c_signal;
+
+  Data_Get_Struct(self, sox_signalinfo_t, c_signal);
+
+  return UINT2NUM(c_signal->length);
+}
+
+VALUE rsoxsignal_length_set(VALUE self, VALUE length) {
+  sox_signalinfo_t     *c_signal;
+  size_t val = (size_t)NUM2UINT(length);
+
+  Data_Get_Struct(self, sox_signalinfo_t, c_signal);
+  c_signal->length = val;
+
+  return length;
+}
+
+VALUE rsoxformat_encoding(VALUE self) {
   sox_format_t *c_format;
 
   Data_Get_Struct(self, sox_format_t, c_format);
 
   return Data_Wrap_Struct(RSoxEncoding, 0, 0, &c_format->encoding);
-}/*}}}*/
+}
 
-VALUE rsoxformat_filename(VALUE self) {/*{{{*/
+VALUE rsoxformat_filename(VALUE self) {
   sox_format_t *c_format;
 
   Data_Get_Struct(self, sox_format_t, c_format);
 
   return rb_str_new2(c_format->filename);
-}/*}}}*/
+}
 
-VALUE rsoxformat_read(VALUE self, VALUE buffer) { //, VALUE length) {/*{{{*/
+VALUE rsoxformat_read(VALUE self, VALUE buffer) {
   sox_format_t *c_format;
   sox_sample_t *c_buffer;
 
@@ -201,9 +225,9 @@ VALUE rsoxformat_read(VALUE self, VALUE buffer) { //, VALUE length) {/*{{{*/
   Data_Get_Struct(rb_iv_get(buffer, "@buffer"), sox_sample_t, c_buffer);
 
   return INT2NUM(sox_read(c_format, c_buffer, NUM2INT(rb_iv_get(buffer, "@length"))));
-}/*}}}*/
+}
 
-VALUE rsoxformat_write(VALUE self, VALUE buffer, VALUE length) {/*{{{*/
+VALUE rsoxformat_write(VALUE self, VALUE buffer, VALUE length) {
   sox_format_t *c_format;
   sox_sample_t *c_buffer;
   int write_len = NUM2INT(length == Qnil ? rb_iv_get(buffer, "@length") : length);
@@ -212,22 +236,22 @@ VALUE rsoxformat_write(VALUE self, VALUE buffer, VALUE length) {/*{{{*/
   Data_Get_Struct(rb_iv_get(buffer, "@buffer"), sox_sample_t, c_buffer);
 
   return INT2NUM(sox_write(c_format, c_buffer, write_len));
-}/*}}}*/
+}
 
-VALUE rsoxformat_seek(VALUE self, VALUE offset, VALUE whence){/*{{{*/
+VALUE rsoxformat_seek(VALUE self, VALUE offset, VALUE whence){
   sox_format_t *c_format;
 
   Data_Get_Struct(self, sox_format_t, c_format);
 
   return INT2NUM(sox_seek(c_format, NUM2LONG(offset), NUM2INT(whence)));
-}/*}}}*/
+}
 
-typedef struct {/*{{{ rsox_block_with_id_t */
+typedef struct {/* rsox_block_with_id_t */
   VALUE block;
   ID func;
-} rsox_block_with_id_t;/*}}}*/
+} rsox_block_with_id_t;
 
-static int rsox_rubyblock_flow(sox_effect_t *effect, sox_sample_t const *ibuf, sox_sample_t *obuf UNUSED, size_t *isamp, size_t *osamp) {/*{{{*/
+static int rsox_rubyblock_flow(sox_effect_t *effect, sox_sample_t const *ibuf, sox_sample_t *obuf UNUSED, size_t *isamp, size_t *osamp) {
   size_t i;
   rsox_block_with_id_t *param = (rsox_block_with_id_t *)effect->priv;
   VALUE buffer = Data_Wrap_Struct(RSoxBuffer, 0, 0, ibuf);
@@ -239,17 +263,17 @@ static int rsox_rubyblock_flow(sox_effect_t *effect, sox_sample_t const *ibuf, s
   *osamp = 0;
 
   return SOX_SUCCESS;
-}/*}}}*/
+}
 
-static sox_effect_handler_t const *rsox_rubyblock_handler(void) {/*{{{*/
+static sox_effect_handler_t const *rsox_rubyblock_handler(void) {
   static sox_effect_handler_t handler = {
     "block", NULL, SOX_EFF_MCHAN, NULL, NULL, rsox_rubyblock_flow, NULL, NULL, NULL, sizeof(rsox_block_with_id_t)
   };
 
   return &handler;
-}/*}}}*/
+}
 
-VALUE rsoxeffectschain_add(int argc, VALUE *argv, VALUE self) {/*{{{*/
+VALUE rsoxeffectschain_add(int argc, VALUE *argv, VALUE self) {
   sox_effects_chain_t *c_chain;
   sox_effect_t *c_effect;
   sox_format_t *c_input, *c_output, *c_tmp_format;
@@ -301,9 +325,9 @@ VALUE rsoxeffectschain_add(int argc, VALUE *argv, VALUE self) {/*{{{*/
   i = sox_add_effect(c_chain, c_effect, &c_input->signal, &c_output->signal);
 
   return INT2NUM(i);
-}/*}}}*/
+}
 
-VALUE rsoxbuffer_initialize(int argc, VALUE *argv, VALUE self) {/*{{{*/
+VALUE rsoxbuffer_initialize(int argc, VALUE *argv, VALUE self) {
   sox_sample_t *buffer;
   VALUE length;
   int llen;
@@ -316,7 +340,7 @@ VALUE rsoxbuffer_initialize(int argc, VALUE *argv, VALUE self) {/*{{{*/
   rb_iv_set(self, "@length", INT2NUM(llen));
 
   return self;
-}/*}}}*/
+}
 
 VALUE rsoxbuffer_at(VALUE self, VALUE index) {
   sox_sample_t *c_buffer;
@@ -329,23 +353,23 @@ VALUE rsoxbuffer_at(VALUE self, VALUE index) {
   return Qnil;
 }
 
-VALUE rsoxbuffer_length(VALUE self) {/*{{{*/
+VALUE rsoxbuffer_length(VALUE self) {
   return rb_iv_get(self, "@length");
-}/*}}}*/
+}
 
-VALUE rsoxbuffer_buffer(VALUE self) {/*{{{*/
+VALUE rsoxbuffer_buffer(VALUE self) {
   return rb_iv_get(self, "@buffer");
-}/*}}}*/
+}
 
-VALUE rsoxencoding_bps(VALUE self) {/*{{{*/
+VALUE rsoxencoding_bps(VALUE self) {
   sox_encodinginfo_t *c_enc;
 
   Data_Get_Struct(self, sox_encodinginfo_t, c_enc);
 
   return UINT2NUM(c_enc->bits_per_sample);
-}/*}}}*/
+}
 
-VALUE rsoxencoding_bps_set(VALUE self, VALUE bps) {/*{{{*/
+VALUE rsoxencoding_bps_set(VALUE self, VALUE bps) {
   sox_encodinginfo_t *c_enc;
   unsigned int val = NUM2UINT(bps);
 
@@ -353,13 +377,13 @@ VALUE rsoxencoding_bps_set(VALUE self, VALUE bps) {/*{{{*/
   c_enc->bits_per_sample = val;
 
   return bps;
-}/*}}}*/
+}
 
-static void rsoxeffectschain_free(void *ptr) {/*{{{*/
+static void rsoxeffectschain_free(void *ptr) {
   sox_delete_effects_chain(ptr);
-}/*}}}*/
+}
 
-VALUE rsox_effectschain(VALUE self, VALUE input, VALUE output) {/*{{{*/
+VALUE rsox_effectschain(VALUE self, VALUE input, VALUE output) {
   sox_format_t *c_input, *c_output;
   sox_effects_chain_t *c_chain;
   VALUE chain;
@@ -375,21 +399,21 @@ VALUE rsox_effectschain(VALUE self, VALUE input, VALUE output) {/*{{{*/
   rb_iv_set(self, "@chain", chain);
 
   return chain;
-}/*}}}*/
+}
 
-int rsoxeffectschain_flow_callback(sox_bool all_done, void *data) {/*{{{*/
+int rsoxeffectschain_flow_callback(sox_bool all_done, void *data) {
   return SOX_SUCCESS;
-}/*}}}*/
+}
 
-VALUE rsoxeffectschain_flow(int argc, VALUE *argv, VALUE self) {/*{{{*/
+VALUE rsoxeffectschain_flow(int argc, VALUE *argv, VALUE self) {
   sox_effects_chain_t *c_chain;
 
   Data_Get_Struct(self, sox_effects_chain_t, c_chain);
 
   return INT2NUM(sox_flow_effects(c_chain, NULL, NULL));
-}/*}}}*/
+}
 
-void Init_rsox(void) {/*{{{*/
+void Init_rsox(void) {
   rb_define_global_const("SOX_SUCCESS", INT2NUM(0));
   rb_define_global_const("SOX_EOF",     INT2NUM(-1));
 
@@ -422,12 +446,15 @@ void Init_rsox(void) {/*{{{*/
   rb_define_method(RSoxBuffer, "at",         rsoxbuffer_at,          1);
 
   RSoxSignal        = rb_define_class("RSoxSignal", rb_cObject);
+  rb_define_alloc_func(RSoxSignal, rsoxsignal_alloc);
   rb_define_method(RSoxSignal, "rate",      rsoxsignal_rate,         0);
   rb_define_method(RSoxSignal, "channels",  rsoxsignal_channels,     0);
   rb_define_method(RSoxSignal, "bits",      rsoxsignal_bits,         0);
+  rb_define_method(RSoxSignal, "length",    rsoxsignal_length,       0);
   rb_define_method(RSoxSignal, "rate=",     rsoxsignal_rate_set,     1);
   rb_define_method(RSoxSignal, "channels=", rsoxsignal_channels_set, 1);
   rb_define_method(RSoxSignal, "bits=",     rsoxsignal_bits_set,     1);
+  rb_define_method(RSoxSignal, "length=",   rsoxsignal_length_set,   1);
 
   RSoxEncoding      = rb_define_class("RSoxEncoding", rb_cObject);
   rb_define_method(RSoxEncoding, "bps",  rsoxencoding_bps, 0);
@@ -438,4 +465,4 @@ void Init_rsox(void) {/*{{{*/
   RSoxEffectsChain  = rb_define_class("RSoxEffectsChain", rb_cObject);
   rb_define_method(RSoxEffectsChain, "add",  rsoxeffectschain_add,  -1);
   rb_define_method(RSoxEffectsChain, "flow", rsoxeffectschain_flow, -1);
-}/*}}}*/
+}

@@ -15,19 +15,26 @@ describe 'general' do
     input  = @rs.open_read  'file.mp3'
 
     sig = input.signal
-    sig.bits.should == 16
+    #sig.bits = 16
+    #sig.bits.should == 16
     sig.channels.should == 2
-    sig.channels = 1
+    #sig.channels = 1
+
+    newsig = RSoxSignal.new
+    newsig.bits = 8 #sig.bits
+    newsig.channels = 1 #sig.channels
+    newsig.length = sig.length
+    newsig.rate = 16000 #sig.rate
 
     enc = input.encoding
     #enc.bps.should == 320
 
-    output = @rs.open_write 'file.wav', input.signal
+    output = @rs.open_write 'file.wav', newsig #input.signal
 
     buf = RSoxBuffer.new 4096
     buf.length.should == 4096
 
-    if (readed = input.read buf) > 0
+    while (readed = input.read buf) > 0
       wrote = output.write buf, readed
       readed.should == wrote
     end
