@@ -6,13 +6,13 @@ describe 'general' do
   end
 
   it 'just works' do
-    i = @rs.open_read 'file.mp3'
+    i = @rs.open_read 'input.wav'
     i.class.to_s.should == 'RSoxFormat'
     i.signal.class.to_s.should == 'RSoxSignal'
   end
 
   it 'decode mp3 & encode pcm wav' do
-    input  = @rs.open_read  'file.mp3'
+    input  = @rs.open_read  'input.wav'
 
     sig = input.signal
     #sig.bits = 16
@@ -21,15 +21,15 @@ describe 'general' do
     #sig.channels = 1
 
     newsig = RSoxSignal.new
-    newsig.bits = 8 #sig.bits
-    newsig.channels = 1 #sig.channels
+    newsig.bits = sig.bits
+    newsig.channels = sig.channels
     newsig.length = sig.length
-    newsig.rate = 16000 #sig.rate
+    newsig.rate = 8000 #sig.rate
 
     enc = input.encoding
     #enc.bps.should == 320
 
-    output = @rs.open_write 'file.wav', newsig #input.signal
+    output = @rs.open_write 'output.wav', newsig #input.signal
 
     buf = RSoxBuffer.new 4096
     buf.length.should == 4096

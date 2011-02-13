@@ -379,6 +379,14 @@ VALUE rsoxencoding_bps_set(VALUE self, VALUE bps) {
   return bps;
 }
 
+VALUE rsoxencoding_compression(VALUE self) {
+  sox_encodinginfo_t *c_enc;
+
+  Data_Get_Struct(self, sox_encodinginfo_t, c_enc);
+
+  return DBL2NUM(c_enc->compression);
+}
+
 static void rsoxeffectschain_free(void *ptr) {
   sox_delete_effects_chain(ptr);
 }
@@ -459,6 +467,7 @@ void Init_rsox(void) {
   RSoxEncoding      = rb_define_class("RSoxEncoding", rb_cObject);
   rb_define_method(RSoxEncoding, "bps",  rsoxencoding_bps, 0);
   rb_define_method(RSoxEncoding, "bps=", rsoxencoding_bps, 1);
+  rb_define_method(RSoxEncoding, "compression", rsoxencoding_compression, 0);
 
   RSoxEffect = rb_define_class("RSoxEffect", rb_cObject);
 
