@@ -65,11 +65,13 @@ VALUE rsox_get_bufsize(VALUE self) {
 
 VALUE rsox_format_init(VALUE self) {
   int i = sox_format_init();
+	
   return INT2NUM(i);
 }
 
 VALUE rsox_format_quit(VALUE self) {
   sox_format_quit();
+	
   return Qnil;
 }
 
@@ -353,6 +355,7 @@ VALUE rsoxbuffer_at(VALUE self, VALUE index) {
 
   if (index < rb_iv_get(self, "@length")) {
     Data_Get_Struct(self, sox_sample_t, c_buffer);
+	  
     return INT2NUM(c_buffer[NUM2INT(index)]);
   }
 
